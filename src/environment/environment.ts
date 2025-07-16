@@ -1,5 +1,5 @@
 export const environment = {
-  apiUrl: 'http://localhost:3000/api/v1',
+  apiUrl: 'https://inmohouse-api.onrender.com/api/v1',
   microfrontendUrl: 'http://localhost:5000',
   hostUrl: 'http://localhost:4200',
   name: 'appointments',
