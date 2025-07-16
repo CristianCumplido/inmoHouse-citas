@@ -1,0 +1,601 @@
+// src/app/appointments/components/appointments-list/appointments-list.component.scss
+
+.appointments-container {
+  padding: 0;
+  max-width: 1400px;
+  margin: 0 auto;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+
+  // Header Toolbar
+  .header-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 24px;
+
+    .page-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.5rem;
+      font-weight: 500;
+
+      .title-icon {
+        font-size: 1.8rem;
+        width: 1.8rem;
+        height: 1.8rem;
+      }
+    }
+
+    .spacer {
+      flex: 1 1 auto;
+    }
+
+    .create-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 24px;
+      font-weight: 500;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+
+      mat-icon {
+        margin-right: 0;
+      }
+    }
+  }
+
+  // Error Card
+  .error-card {
+    margin: 0 24px 24px 24px;
+    background-color: #ffebee;
+    border-left: 4px solid #f44336;
+
+    .error-content {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #c62828;
+
+      mat-icon {
+        font-size: 1.2rem;
+      }
+
+      span {
+        flex: 1;
+        font-weight: 500;
+      }
+
+      button {
+        margin-left: auto;
+      }
+    }
+  }
+
+  // Filters Card
+  .filters-card {
+    margin: 0 24px 24px 24px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+    mat-card-header {
+      padding-bottom: 8px;
+
+      mat-card-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #424242;
+        font-size: 1.1rem;
+        margin-bottom: 0;
+      }
+    }
+
+    .filters-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+
+      .filter-field {
+        width: 100%;
+
+        ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+          display: none;
+        }
+      }
+    }
+  }
+
+  // Loading
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 24px;
+    color: #666;
+
+    .loading-text {
+      margin-top: 16px;
+      font-size: 1.1rem;
+      color: #666;
+    }
+  }
+
+  // Content Area
+  .appointments-content {
+    padding: 0 24px 24px;
+  }
+
+  // Empty State
+  .empty-state-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 24px;
+
+      .empty-icon {
+        font-size: 4rem;
+        width: 4rem;
+        height: 4rem;
+        color: #bdbdbd;
+        margin-bottom: 16px;
+      }
+
+      h2 {
+        color: #424242;
+        margin-bottom: 16px;
+        font-weight: 400;
+      }
+
+      p {
+        color: #666;
+        margin-bottom: 24px;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+        line-height: 1.5;
+      }
+
+      button {
+        border-radius: 24px;
+        padding: 12px 24px;
+      }
+    }
+  }
+
+  // Appointments Grid
+  .appointments-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    gap: 24px;
+
+    .appointment-card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      border: 1px solid #e0e0e0;
+
+      &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      }
+
+      &.past-appointment {
+        background: #fafafa;
+
+        .past-indicator {
+          position: absolute;
+          top: 12px;
+          right: 12px;
+          z-index: 10;
+        }
+      }
+
+      // Header
+      .appointment-header {
+        padding: 20px 20px 12px;
+        border-bottom: 1px solid #f0f0f0;
+
+        .property-image-container {
+          margin-right: 16px;
+
+          .property-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 12px;
+            object-fit: cover;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          }
+        }
+
+        mat-card-title-group {
+          flex: 1;
+          margin: 0;
+
+          .property-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #212121;
+            margin-bottom: 8px;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+          }
+
+          .property-location {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+
+            .location-icon {
+              font-size: 1rem;
+              width: 1rem;
+              height: 1rem;
+            }
+          }
+
+          .property-price {
+            font-weight: 600;
+            color: #4caf50;
+            font-size: 1.2rem;
+          }
+        }
+      }
+
+      // Body
+      .appointment-body {
+        padding: 20px;
+
+        .datetime-section {
+          margin-bottom: 16px;
+
+          .datetime-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            color: #424242;
+            font-size: 0.95rem;
+
+            mat-icon {
+              font-size: 1.1rem;
+              width: 1.1rem;
+              height: 1.1rem;
+            }
+
+            &:last-child {
+              margin-bottom: 0;
+            }
+          }
+        }
+
+        .status-section {
+          margin-bottom: 16px;
+
+          .status-chip {
+            font-weight: 500;
+
+            mat-icon {
+              font-size: 1rem !important;
+              width: 1rem !important;
+              height: 1rem !important;
+            }
+          }
+        }
+
+        .section-divider {
+          margin: 16px 0;
+        }
+
+        .section-title {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 1rem;
+          font-weight: 500;
+          color: #424242;
+          margin-bottom: 12px;
+
+          mat-icon {
+            font-size: 1.1rem;
+            width: 1.1rem;
+            height: 1.1rem;
+          }
+        }
+
+        .participants-section {
+          .participant {
+            margin-bottom: 12px;
+
+            &:last-child {
+              margin-bottom: 0;
+            }
+
+            .participant-info {
+              font-size: 0.9rem;
+              line-height: 1.4;
+
+              strong {
+                color: #424242;
+              }
+
+              .phone-info {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                margin-top: 4px;
+                color: #666;
+                font-size: 0.85rem;
+
+                .phone-icon {
+                  font-size: 0.9rem;
+                  width: 0.9rem;
+                  height: 0.9rem;
+                }
+              }
+            }
+          }
+        }
+
+        .notes-section {
+          .notes-panel {
+            margin-bottom: 8px;
+            box-shadow: none;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+
+            &:last-child {
+              margin-bottom: 0;
+            }
+
+            ::ng-deep .mat-expansion-panel-header {
+              padding: 12px 16px;
+              height: auto;
+            }
+
+            ::ng-deep .mat-expansion-panel-content .mat-expansion-panel-body {
+              padding: 0 16px 16px;
+              font-size: 0.9rem;
+              line-height: 1.4;
+              color: #666;
+            }
+          }
+        }
+      }
+
+      // Actions
+      .appointment-actions {
+        padding: 16px 20px;
+        background-color: #fafafa;
+        border-top: 1px solid #f0f0f0;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+
+        button {
+          flex: 1;
+          min-width: 90px;
+          border-radius: 20px;
+          font-size: 0.85rem;
+          font-weight: 500;
+          padding: 8px 16px;
+
+          mat-icon {
+            font-size: 1rem;
+            width: 1rem;
+            height: 1rem;
+            margin-right: 4px;
+          }
+        }
+      }
+    }
+  }
+
+  // Pagination Card
+  .pagination-card {
+    margin-top: 32px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+    mat-card-content {
+      padding: 8px 0;
+
+      ::ng-deep mat-paginator {
+        background: transparent;
+
+        .mat-mdc-paginator-range-label {
+          margin: 0 16px;
+        }
+      }
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 1024px) {
+  .appointments-container {
+    .appointments-grid {
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+      gap: 16px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .appointments-container {
+    .header-toolbar {
+      .page-title {
+        font-size: 1.3rem;
+
+        .title-icon {
+          font-size: 1.5rem;
+          width: 1.5rem;
+          height: 1.5rem;
+        }
+      }
+
+      .create-btn {
+        padding: 10px 16px;
+        font-size: 0.9rem;
+      }
+    }
+
+    .filters-card,
+    .error-card,
+    .appointments-content {
+      margin-left: 16px;
+      margin-right: 16px;
+    }
+
+    .filters-card .filters-row {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .appointments-grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
+
+      .appointment-card {
+        .appointment-actions {
+          button {
+            flex: 1;
+            min-width: 70px;
+            font-size: 0.8rem;
+          }
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .appointments-container {
+    .header-toolbar {
+      padding: 0 12px;
+
+      .page-title {
+        font-size: 1.1rem;
+      }
+
+      .create-btn {
+        padding: 8px 12px;
+
+        span:not(.mat-icon) {
+          display: none;
+        }
+      }
+    }
+
+    .appointments-grid {
+      .appointment-card {
+        .appointment-header {
+          padding: 16px;
+
+          .property-image-container .property-image {
+            width: 60px;
+            height: 60px;
+          }
+
+          mat-card-title-group .property-title {
+            font-size: 1.1rem;
+          }
+        }
+
+        .appointment-body {
+          padding: 16px;
+        }
+
+        .appointment-actions {
+          padding: 12px 16px;
+
+          button {
+            padding: 6px 12px;
+            min-width: 60px;
+
+            span:not(.mat-icon) {
+              display: none;
+            }
+
+            mat-icon {
+              margin-right: 0;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// Dark theme support
+@media (prefers-color-scheme: dark) {
+  .appointments-container {
+    background-color: #121212;
+
+    .filters-card,
+    .empty-state-card,
+    .appointment-card,
+    .pagination-card {
+      background-color: #1e1e1e;
+      border-color: #333;
+    }
+
+    .appointment-card .appointment-actions {
+      background-color: #2a2a2a;
+      border-color: #333;
+    }
+  }
+}
+
+// Animation classes
+.mat-mdc-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mat-mdc-button,
+.mat-mdc-raised-button,
+.mat-mdc-outlined-button {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+}
+
+// Custom scrollbar
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+
+  &:hover {
+    background: #a8a8a8;
+  }
+}

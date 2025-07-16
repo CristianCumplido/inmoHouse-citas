@@ -1,0 +1,410 @@
+<!-- src/app/appointments/components/appointment-form/appointment-form.component.html -->
+
+<div class="appointment-form-container">
+    <!-- Header Toolbar -->
+    <mat-toolbar class="form-toolbar" color="primary">
+        <button mat-icon-button (click)="onCancel()" matTooltip="Volver">
+            <mat-icon>arrow_back</mat-icon>
+        </button>
+        <span class="form-title">
+            <mat-icon class="title-icon">{{ isEditMode ? 'edit_calendar' : 'add_circle' }}</mat-icon>
+            {{ getFormTitle() }}
+        </span>
+        <span class="spacer"></span>
+        <mat-chip-set *ngIf="isEditMode && currentAppointment">
+            <mat-chip [color]="getStatusChipColor(currentAppointment.status)">
+                <mat-icon matChipAvatar>{{ getStatusIcon(currentAppointment.status) }}</mat-icon>
+                {{ currentAppointment.status }}
+            </mat-chip>
+        </mat-chip-set>
+    </mat-toolbar>
+
+    <!-- Error Message -->
+    <mat-card class="error-card" *ngIf="error" appearance="outlined">
+        <mat-card-content>
+            <div class="error-content">
+                <mat-icon color="warn">error</mat-icon>
+                <span>{{ error }}</span>
+                <button mat-icon-button (click)="error = ''">
+                    <mat-icon>close</mat-icon>
+                </button>
+            </div>
+        </mat-card-content>
+    </mat-card>
+
+    <!-- Loading State -->
+    <div class="loading-container" *ngIf="loading">
+        <mat-spinner diameter="60"></mat-spinner>
+        <p class="loading-text">Cargando formulario...</p>
+    </div>
+
+    <!-- Form Content -->
+    <div class="form-content" *ngIf="!loading">
+        <form [formGroup]="appointmentForm" (ngSubmit)="onSubmit()" novalidate>
+
+            <!-- Form Steps -->
+            <mat-vertical-stepper linear="false" class="form-stepper">
+
+                <!-- Step 1: Property Selection -->
+                <mat-step [stepControl]="appointmentForm.get('propertyId')!" label="Seleccionar Propiedad">
+                    <ng-template matStepLabel>
+                        <div class="step-label">
+                            <mat-icon>home</mat-icon>
+                            <span>Propiedad</span>
+                        </div>
+                    </ng-template>
+
+                    <mat-card class="step-card" appearance="outlined">
+                        <mat-card-content>
+                            <div class="step-content">
+                                <h3 class="step-title">Elige la propiedad que deseas visitar</h3>
+
+                                <mat-form-field appearance="outline" class="full-width">
+                                    <mat-label>Propiedad</mat-label>
+                                    <mat-select formControlName="propertyId" (selectionChange)="onPropertyChange()"
+                                        [disabled]="!canEditField('propertyId')">
+                                        <mat-option value="">Selecciona una propiedad</mat-option>
+                                        <mat-option *ngFor="let property of properties" [value]="property.id">
+                                            <div class="property-option">
+                                                <div class="property-option-main">
+                                                    <strong>{{ property.title }}</strong>
+                                                    <span class="property-location">{{ property.location }}</span>
+                                                </div>
+                                                <div class="property-price">${{ property.price | number:'1.0-0' }}</div>
+                                            </div>
+                                        </mat-option>
+                                    </mat-select>
+                                    <mat-icon matSuffix>home</mat-icon>
+                                    <mat-error *ngIf="appointmentForm.get('propertyId')?.hasError('required')">
+                                        Debes seleccionar una propiedad
+                                    </mat-error>
+                                </mat-form-field>
+
+                                <!-- Property Preview -->
+                                <mat-card class="property-preview-card"
+                                    *ngIf="getSelectedProperty() as selectedProperty" appearance="outlined">
+                                    <mat-card-header class="property-header">
+                                        <div class="property-image-container">
+                                            <img [src]="selectedProperty.imageUrl" [alt]="selectedProperty.title"
+                                                class="property-image"
+                                                onerror="this.src='assets/images/property-placeholder.jpg'">
+                                        </div>
+                                        <mat-card-title-group>
+                                            <mat-card-title>{{ selectedProperty.title }}</mat-card-title>
+                                            <mat-card-subtitle>
+                                                <mat-icon class="location-icon">place</mat-icon>
+                                                {{ selectedProperty.location }}
+                                            </mat-card-subtitle>
+                                        </mat-card-title-group>
+                                    </mat-card-header>
+
+                                    <mat-card-content>
+                                        <div class="property-details">
+                                            <mat-chip-set>
+                                                <mat-chip>
+                                                    <mat-icon matChipAvatar>square_foot</mat-icon>
+                                                    {{ selectedProperty.area }} m²
+                                                </mat-chip>
+                                                <mat-chip>
+                                                    <mat-icon matChipAvatar>bed</mat-icon>
+                                                    {{ selectedProperty.bedrooms }} hab.
+                                                </mat-chip>
+                                                <mat-chip>
+                                                    <mat-icon matChipAvatar>bathtub</mat-icon>
+                                                    {{ selectedProperty.bathrooms }} baños
+                                                </mat-chip>
+                                            </mat-chip-set>
+                                            <div class="price-tag">
+                                                <span class="price">${{ selectedProperty.price | number:'1.0-0'
+                                                    }}</span>
+                                            </div>
+                                        </div>
+                                    </mat-card-content>
+                                </mat-card>
+                            </div>
+                        </mat-card-content>
+                    </mat-card>
+                </mat-step>
+
+                <!-- Step 2: Date and Time -->
+                <mat-step [stepControl]="getDateTimeFormGroup()!" label="Fecha y Hora">
+                    <ng-template matStepLabel>
+                        <div class="step-label">
+                            <mat-icon>event</mat-icon>
+                            <span>Fecha y Hora</span>
+                        </div>
+                    </ng-template>
+
+                    <mat-card class="step-card" appearance="outlined">
+                        <mat-card-content>
+                            <div class="step-content">
+                                <h3 class="step-title">Programa tu visita</h3>
+
+                                <div class="datetime-form">
+                                    <mat-form-field appearance="outline" class="date-field">
+                                        <mat-label>Fecha de la cita</mat-label>
+                                        <input matInput [matDatepicker]="picker" formControlName="date"
+                                            [min]="getMinDate()" [disabled]="!canEditField('date')" readonly>
+                                        <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+                                        <mat-datepicker #picker></mat-datepicker>
+                                        <mat-error *ngIf="appointmentForm.get('date')?.hasError('required')">
+                                            Debes seleccionar una fecha
+                                        </mat-error>
+                                    </mat-form-field>
+
+                                    <mat-form-field appearance="outline" class="time-field">
+                                        <mat-label>Hora de inicio</mat-label>
+                                        <mat-select formControlName="startTime" [disabled]="!canEditField('startTime')">
+                                            <mat-option *ngFor="let time of getAvailableTimes()" [value]="time">
+                                                {{ time }}
+                                            </mat-option>
+                                        </mat-select>
+                                        <mat-icon matSuffix>schedule</mat-icon>
+                                        <mat-error *ngIf="appointmentForm.get('startTime')?.hasError('required')">
+                                            Debes seleccionar una hora
+                                        </mat-error>
+                                        <mat-hint>La cita tendrá una duración de 1 hora</mat-hint>
+                                    </mat-form-field>
+                                </div>
+
+                                <!-- Appointment Summary -->
+                                <mat-card class="appointment-summary"
+                                    *ngIf="appointmentForm.get('date')?.value && appointmentForm.get('startTime')?.value"
+                                    appearance="outlined">
+                                    <mat-card-header>
+                                        <mat-card-title>
+                                            <mat-icon>info</mat-icon>
+                                            Resumen de la cita
+                                        </mat-card-title>
+                                    </mat-card-header>
+                                    <mat-card-content>
+                                        <div class="summary-content">
+                                            <div class="summary-item">
+                                                <mat-icon color="primary">event</mat-icon>
+                                                <div>
+                                                    <strong>{{ formatDate(appointmentForm.get('date')?.value)
+                                                        }}</strong>
+                                                    <span>{{ getDayOfWeek(appointmentForm.get('date')?.value) }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="summary-item">
+                                                <mat-icon color="primary">schedule</mat-icon>
+                                                <div>
+                                                    <strong>{{ appointmentForm.get('startTime')?.value }} - {{
+                                                        getEndTime() }}</strong>
+                                                    <span>Duración: 1 hora</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </mat-card-content>
+                                </mat-card>
+                            </div>
+                        </mat-card-content>
+                    </mat-card>
+                </mat-step>
+
+                <!-- Step 3: Agent Assignment (Admin/Agent only) -->
+                <mat-step label="Asignación"
+                    *ngIf="(currentUser?.role === UserRole.ADMIN || currentUser?.role === UserRole.AGENT) && agents.length > 0">
+                    <ng-template matStepLabel>
+                        <div class="step-label">
+                            <mat-icon>person</mat-icon>
+                            <span>Agente</span>
+                        </div>
+                    </ng-template>
+
+                    <mat-card class="step-card" appearance="outlined">
+                        <mat-card-content>
+                            <div class="step-content">
+                                <h3 class="step-title">Asignar agente</h3>
+
+                                <mat-form-field appearance="outline" class="full-width">
+                                    <mat-label>Agente responsable</mat-label>
+                                    <mat-select formControlName="agentId" [disabled]="!canEditField('agentId')">
+                                        <mat-option value="">Sin agente asignado</mat-option>
+                                        <mat-option *ngFor="let agent of agents" [value]="agent.id">
+                                            <div class="agent-option">
+                                                <div class="agent-info">
+                                                    <strong>{{ agent.name }}</strong>
+                                                    <span>{{ agent.email }}</span>
+                                                </div>
+                                                <mat-icon>person</mat-icon>
+                                            </div>
+                                        </mat-option>
+                                    </mat-select>
+                                    <mat-icon matSuffix>person</mat-icon>
+                                    <mat-hint>Opcional: Se puede asignar un agente específico</mat-hint>
+                                </mat-form-field>
+
+                                <!-- Status (Edit mode only) -->
+                                <mat-form-field appearance="outline" class="full-width"
+                                    *ngIf="isEditMode && (currentUser?.role === UserRole.ADMIN || currentUser?.role === UserRole.AGENT)">
+                                    <mat-label>Estado de la cita</mat-label>
+                                    <mat-select formControlName="status" [disabled]="!canEditField('status')">
+                                        <mat-option [value]="AppointmentStatus.PENDING">
+                                            <div class="status-option">
+                                                <mat-icon>schedule</mat-icon>
+                                                {{ AppointmentStatus.PENDING }}
+                                            </div>
+                                        </mat-option>
+                                        <mat-option [value]="AppointmentStatus.CONFIRMED">
+                                            <div class="status-option">
+                                                <mat-icon>event_available</mat-icon>
+                                                {{ AppointmentStatus.CONFIRMED }}
+                                            </div>
+                                        </mat-option>
+                                        <mat-option [value]="AppointmentStatus.COMPLETED">
+                                            <div class="status-option">
+                                                <mat-icon>check_circle</mat-icon>
+                                                {{ AppointmentStatus.COMPLETED }}
+                                            </div>
+                                        </mat-option>
+                                        <mat-option [value]="AppointmentStatus.CANCELLED">
+                                            <div class="status-option">
+                                                <mat-icon>cancel</mat-icon>
+                                                {{ AppointmentStatus.CANCELLED }}
+                                            </div>
+                                        </mat-option>
+                                    </mat-select>
+                                    <mat-icon matSuffix>tune</mat-icon>
+                                </mat-form-field>
+                            </div>
+                        </mat-card-content>
+                    </mat-card>
+                </mat-step>
+
+                <!-- Step 4: Notes -->
+                <mat-step label="Notas y Comentarios">
+                    <ng-template matStepLabel>
+                        <div class="step-label">
+                            <mat-icon>note</mat-icon>
+                            <span>Notas</span>
+                        </div>
+                    </ng-template>
+
+                    <mat-card class="step-card" appearance="outlined">
+                        <mat-card-content>
+                            <div class="step-content">
+                                <h3 class="step-title">Información adicional</h3>
+
+                                <mat-accordion class="notes-accordion">
+                                    <!-- General Notes -->
+                                    <mat-expansion-panel expanded="true">
+                                        <mat-expansion-panel-header>
+                                            <mat-panel-title>
+                                                <mat-icon>note</mat-icon>
+                                                Notas generales
+                                            </mat-panel-title>
+                                            <mat-panel-description>
+                                                Comentarios sobre la cita
+                                            </mat-panel-description>
+                                        </mat-expansion-panel-header>
+
+                                        <mat-form-field appearance="outline" class="full-width">
+                                            <mat-label>Comentarios adicionales</mat-label>
+                                            <textarea matInput formControlName="notes" rows="3"
+                                                placeholder="Información relevante sobre la cita..."
+                                                [disabled]="!canEditField('notes')"></textarea>
+                                            <mat-icon matSuffix>edit_note</mat-icon>
+                                        </mat-form-field>
+                                    </mat-expansion-panel>
+
+                                    <!-- Client Notes -->
+                                    <mat-expansion-panel *ngIf="currentUser?.role === UserRole.CLIENT || isEditMode">
+                                        <mat-expansion-panel-header>
+                                            <mat-panel-title>
+                                                <mat-icon>person</mat-icon>
+                                                Notas del cliente
+                                            </mat-panel-title>
+                                            <mat-panel-description>
+                                                Comentarios específicos del cliente
+                                            </mat-panel-description>
+                                        </mat-expansion-panel-header>
+
+                                        <mat-form-field appearance="outline" class="full-width">
+                                            <mat-label>Comentarios del cliente</mat-label>
+                                            <textarea matInput formControlName="clientNotes" rows="2"
+                                                placeholder="Preferencias, consultas específicas..."
+                                                [disabled]="!canEditField('clientNotes')"></textarea>
+                                            <mat-icon matSuffix>person_outline</mat-icon>
+                                        </mat-form-field>
+                                    </mat-expansion-panel>
+
+                                    <!-- Agent Notes -->
+                                    <mat-expansion-panel
+                                        *ngIf="(currentUser?.role === UserRole.AGENT || currentUser?.role === UserRole.ADMIN) && isEditMode">
+                                        <mat-expansion-panel-header>
+                                            <mat-panel-title>
+                                                <mat-icon>work</mat-icon>
+                                                Notas del agente
+                                            </mat-panel-title>
+                                            <mat-panel-description>
+                                                Comentarios internos del agente
+                                            </mat-panel-description>
+                                        </mat-expansion-panel-header>
+
+                                        <mat-form-field appearance="outline" class="full-width">
+                                            <mat-label>Comentarios internos</mat-label>
+                                            <textarea matInput formControlName="agentNotes" rows="2"
+                                                placeholder="Notas internas, preparación, etc..."
+                                                [disabled]="!canEditField('agentNotes')"></textarea>
+                                            <mat-icon matSuffix>work_outline</mat-icon>
+                                        </mat-form-field>
+                                    </mat-expansion-panel>
+                                </mat-accordion>
+                            </div>
+                        </mat-card-content>
+                    </mat-card>
+                </mat-step>
+            </mat-vertical-stepper>
+
+            <!-- Important Information Card -->
+            <mat-card class="info-card" appearance="outlined">
+                <mat-card-header>
+                    <mat-card-title>
+                        <mat-icon color="warn">info</mat-icon>
+                        Información importante
+                    </mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                    <div class="info-list">
+                        <div class="info-item">
+                            <mat-icon color="primary">schedule</mat-icon>
+                            <span>Las citas deben programarse con al menos 12 horas de anticipación</span>
+                        </div>
+                        <div class="info-item">
+                            <mat-icon color="primary">timer</mat-icon>
+                            <span>Cada cita tiene una duración de 1 hora</span>
+                        </div>
+                        <div class="info-item">
+                            <mat-icon color="primary">cancel</mat-icon>
+                            <span>Puedes cancelar tu cita hasta 2 horas antes de la hora programada</span>
+                        </div>
+                        <div class="info-item">
+                            <mat-icon color="primary">check_circle</mat-icon>
+                            <span>Un agente confirmará tu cita y se pondrá en contacto contigo</span>
+                        </div>
+                    </div>
+                </mat-card-content>
+            </mat-card>
+
+            <!-- Form Actions -->
+            <mat-card class="actions-card" appearance="outlined">
+                <mat-card-actions class="form-actions">
+                    <button type="button" mat-stroked-button color="accent" (click)="onCancel()" [disabled]="saving"
+                        class="cancel-btn">
+                        <mat-icon>close</mat-icon>
+                        Cancelar
+                    </button>
+
+                    <button type="submit" mat-raised-button color="primary"
+                        [disabled]="appointmentForm.invalid || saving" class="submit-btn">
+                        <mat-icon *ngIf="!saving">{{ isEditMode ? 'update' : 'add' }}</mat-icon>
+                        <mat-spinner *ngIf="saving" diameter="20"></mat-spinner>
+                        {{ getSubmitButtonText() }}
+                    </button>
+                </mat-card-actions>
+            </mat-card>
+        </form>
+    </div>
+</div>

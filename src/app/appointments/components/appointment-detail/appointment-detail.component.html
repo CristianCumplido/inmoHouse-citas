@@ -1,0 +1,378 @@
+<!-- src/app/appointments/components/appointment-detail/appointment-detail.component.html -->
+
+<div class="appointment-detail-container">
+    <!-- Header Toolbar -->
+    <mat-toolbar class="detail-toolbar" color="primary">
+        <button mat-icon-button (click)="goBack()" matTooltip="Volver a lista de citas">
+            <mat-icon>arrow_back</mat-icon>
+        </button>
+        <span class="detail-title">
+            <mat-icon class="title-icon">event_note</mat-icon>
+            Detalle de la Cita
+        </span>
+        <span class="spacer"></span>
+        <!-- Status Chip in Header -->
+        <mat-chip-set *ngIf="appointment">
+            <mat-chip [color]="getStatusChipColor(appointment.status)">
+                <mat-icon matChipAvatar>{{ getStatusIcon(appointment.status) }}</mat-icon>
+                {{ appointment.status }}
+            </mat-chip>
+        </mat-chip-set>
+    </mat-toolbar>
+
+    <!-- Error Message -->
+    <mat-card class="error-card" *ngIf="error" appearance="outlined">
+        <mat-card-content>
+            <div class="error-content">
+                <mat-icon color="warn">error</mat-icon>
+                <span>{{ error }}</span>
+                <button mat-icon-button (click)="clearError()">
+                    <mat-icon>close</mat-icon>
+                </button>
+            </div>
+        </mat-card-content>
+    </mat-card>
+
+    <!-- Loading State -->
+    <div class="loading-container" *ngIf="loading">
+        <mat-spinner diameter="60"></mat-spinner>
+        <p class="loading-text">Cargando detalles de la cita...</p>
+    </div>
+
+    <!-- Appointment Details Content -->
+    <div class="detail-content" *ngIf="!loading && appointment">
+
+        <!-- Status and Actions Card -->
+        <mat-card class="status-actions-card" appearance="outlined">
+            <mat-card-content>
+                <div class="status-actions-content">
+                    <div class="status-info">
+                        <div class="status-main">
+                            <mat-chip [color]="getStatusChipColor(appointment.status)" class="status-chip-large">
+                                <mat-icon matChipAvatar>{{ getStatusIcon(appointment.status) }}</mat-icon>
+                                {{ appointment.status }}
+                            </mat-chip>
+                        </div>
+
+                        <div class="time-info">
+                            <div class="time-item" *ngIf="!isAppointmentInPast()">
+                                <mat-icon color="primary">schedule</mat-icon>
+                                <span class="time-text">{{ getTimeRemaining() }}</span>
+                            </div>
+                            <div class="time-item past" *ngIf="isAppointmentInPast()">
+                                <mat-icon color="accent">history</mat-icon>
+                                <span class="time-text">Cita finalizada</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="quick-actions">
+                        <button mat-stroked-button color="primary" (click)="editAppointment()"
+                            *ngIf="canModifyAppointment()" [disabled]="actionLoading">
+                            <mat-icon>edit</mat-icon>
+                            Editar
+                        </button>
+
+                        <button mat-flat-button color="primary" (click)="confirmAppointment()"
+                            *ngIf="canConfirmAppointment()" [disabled]="actionLoading">
+                            <mat-icon>check</mat-icon>
+                            Confirmar
+                        </button>
+
+                        <button mat-flat-button color="accent" (click)="completeAppointment()"
+                            *ngIf="canCompleteAppointment()" [disabled]="actionLoading">
+                            <mat-icon>check_circle</mat-icon>
+                            Completar
+                        </button>
+
+                        <button mat-stroked-button color="warn" (click)="cancelAppointment()"
+                            *ngIf="canCancelAppointment()" [disabled]="actionLoading">
+                            <mat-icon>cancel</mat-icon>
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </mat-card-content>
+        </mat-card>
+
+        <!-- Property Information Card -->
+        <mat-card class="property-card" appearance="outlined">
+            <mat-card-header>
+                <mat-card-title>
+                    <mat-icon>home</mat-icon>
+                    Información de la Propiedad
+                </mat-card-title>
+            </mat-card-header>
+
+            <mat-card-content *ngIf="appointment.property">
+                <div class="property-content">
+                    <div class="property-image-section">
+                        <img [src]="appointment.property.imageUrl" [alt]="appointment.property.title"
+                            class="property-image" onerror="this.src='assets/images/property-placeholder.jpg'">
+                    </div>
+
+                    <div class="property-details-section">
+                        <h3 class="property-title">{{ appointment.property.title }}</h3>
+
+                        <div class="property-location">
+                            <mat-icon color="primary">place</mat-icon>
+                            <span>{{ appointment.property.location }}</span>
+                        </div>
+
+                        <div class="property-price">
+                            <span class="price-label">Precio:</span>
+                            <span class="price-value">${{ appointment.property.price | number:'1.0-0' }}</span>
+                        </div>
+
+                        <mat-divider class="property-divider"></mat-divider>
+
+                        <div class="property-features">
+                            <mat-chip-set>
+                                <mat-chip>
+                                    <mat-icon matChipAvatar>square_foot</mat-icon>
+                                    {{ appointment.property.area }} m²
+                                </mat-chip>
+                                <mat-chip>
+                                    <mat-icon matChipAvatar>bed</mat-icon>
+                                    {{ appointment.property.bedrooms }} hab.
+                                </mat-chip>
+                                <mat-chip>
+                                    <mat-icon matChipAvatar>bathtub</mat-icon>
+                                    {{ appointment.property.bathrooms }} baños
+                                </mat-chip>
+                            </mat-chip-set>
+                        </div>
+                    </div>
+                </div>
+            </mat-card-content>
+        </mat-card>
+
+        <!-- Appointment Information Card -->
+        <mat-card class="appointment-info-card" appearance="outlined">
+            <mat-card-header>
+                <mat-card-title>
+                    <mat-icon>event</mat-icon>
+                    Información de la Cita
+                </mat-card-title>
+            </mat-card-header>
+
+            <mat-card-content>
+                <div class="appointment-info-grid">
+                    <div class="info-item">
+                        <mat-icon color="primary">event</mat-icon>
+                        <div class="info-content">
+                            <span class="info-label">Fecha</span>
+                            <span class="info-value">{{ formatDate(appointment.date) }}</span>
+                        </div>
+                    </div>
+
+                    <div class="info-item">
+                        <mat-icon color="primary">schedule</mat-icon>
+                        <div class="info-content">
+                            <span class="info-label">Horario</span>
+                            <span class="info-value">{{ formatTime(appointment.startTime) }} - {{
+                                formatTime(appointment.endTime) }}</span>
+                        </div>
+                    </div>
+
+                    <div class="info-item">
+                        <mat-icon color="primary">tune</mat-icon>
+                        <div class="info-content">
+                            <span class="info-label">Estado</span>
+                            <mat-chip [color]="getStatusChipColor(appointment.status)" class="info-status-chip">
+                                {{ appointment.status }}
+                            </mat-chip>
+                        </div>
+                    </div>
+
+                    <div class="info-item">
+                        <mat-icon color="primary">timer</mat-icon>
+                        <div class="info-content">
+                            <span class="info-label">Duración</span>
+                            <span class="info-value">1 hora</span>
+                        </div>
+                    </div>
+                </div>
+            </mat-card-content>
+        </mat-card>
+
+        <!-- Participants Card -->
+        <mat-card class="participants-card" appearance="outlined">
+            <mat-card-header>
+                <mat-card-title>
+                    <mat-icon>people</mat-icon>
+                    Participantes
+                </mat-card-title>
+            </mat-card-header>
+
+            <mat-card-content>
+                <div class="participants-grid">
+                    <!-- Client Information -->
+                    <mat-card class="participant-card client-card" *ngIf="appointment.client" appearance="outlined">
+                        <mat-card-header>
+                            <div mat-card-avatar class="participant-avatar client-avatar">
+                                <mat-icon>person</mat-icon>
+                            </div>
+                            <mat-card-title>Cliente</mat-card-title>
+                            <mat-card-subtitle>{{ appointment.client.name }}</mat-card-subtitle>
+                        </mat-card-header>
+
+                        <mat-card-content>
+                            <div class="contact-info">
+                                <div class="contact-item">
+                                    <mat-icon>email</mat-icon>
+                                    <a [href]="'mailto:' + appointment.client.email" matTooltip="Enviar email">
+                                        {{ appointment.client.email }}
+                                    </a>
+                                </div>
+                                <div class="contact-item" *ngIf="appointment.client.phone">
+                                    <mat-icon>phone</mat-icon>
+                                    <a [href]="'tel:' + appointment.client.phone" matTooltip="Llamar">
+                                        {{ appointment.client.phone }}
+                                    </a>
+                                </div>
+                            </div>
+                        </mat-card-content>
+                    </mat-card>
+
+                    <!-- Agent Information -->
+                    <mat-card class="participant-card agent-card" *ngIf="appointment.agent" appearance="outlined">
+                        <mat-card-header>
+                            <div mat-card-avatar class="participant-avatar agent-avatar">
+                                <mat-icon>work</mat-icon>
+                            </div>
+                            <mat-card-title>Agente Asignado</mat-card-title>
+                            <mat-card-subtitle>{{ appointment.agent.name }}</mat-card-subtitle>
+                        </mat-card-header>
+
+                        <mat-card-content>
+                            <div class="contact-info">
+                                <div class="contact-item">
+                                    <mat-icon>email</mat-icon>
+                                    <a [href]="'mailto:' + appointment.agent.email" matTooltip="Enviar email">
+                                        {{ appointment.agent.email }}
+                                    </a>
+                                </div>
+                                <div class="contact-item" *ngIf="appointment.agent.phone">
+                                    <mat-icon>phone</mat-icon>
+                                    <a [href]="'tel:' + appointment.agent.phone" matTooltip="Llamar">
+                                        {{ appointment.agent.phone }}
+                                    </a>
+                                </div>
+                            </div>
+                        </mat-card-content>
+                    </mat-card>
+
+                    <!-- No Agent Assigned -->
+                    <mat-card class="participant-card no-agent-card" *ngIf="!appointment.agent" appearance="outlined">
+                        <mat-card-header>
+                            <div mat-card-avatar class="participant-avatar pending-avatar">
+                                <mat-icon>person_add</mat-icon>
+                            </div>
+                            <mat-card-title>Agente</mat-card-title>
+                            <mat-card-subtitle>Por asignar</mat-card-subtitle>
+                        </mat-card-header>
+
+                        <mat-card-content>
+                            <div class="no-agent-content">
+                                <mat-icon color="accent">info</mat-icon>
+                                <p>Un agente será asignado cuando la cita sea confirmada.</p>
+                            </div>
+                        </mat-card-content>
+                    </mat-card>
+                </div>
+            </mat-card-content>
+        </mat-card>
+
+        <!-- Notes and Comments Card -->
+        <mat-card class="notes-card" *ngIf="appointment.notes || appointment.clientNotes || appointment.agentNotes"
+            appearance="outlined">
+            <mat-card-header>
+                <mat-card-title>
+                    <mat-icon>note</mat-icon>
+                    Notas y Comentarios
+                </mat-card-title>
+            </mat-card-header>
+
+            <mat-card-content>
+                <mat-accordion class="notes-accordion">
+                    <!-- General Notes -->
+                    <mat-expansion-panel *ngIf="appointment.notes" expanded="true">
+                        <mat-expansion-panel-header>
+                            <mat-panel-title>
+                                <mat-icon>edit_note</mat-icon>
+                                Notas Generales
+                            </mat-panel-title>
+                        </mat-expansion-panel-header>
+                        <div class="note-content">{{ appointment.notes }}</div>
+                    </mat-expansion-panel>
+
+                    <!-- Client Notes -->
+                    <mat-expansion-panel *ngIf="appointment.clientNotes">
+                        <mat-expansion-panel-header>
+                            <mat-panel-title>
+                                <mat-icon>person</mat-icon>
+                                Notas del Cliente
+                            </mat-panel-title>
+                        </mat-expansion-panel-header>
+                        <div class="note-content client-note">{{ appointment.clientNotes }}</div>
+                    </mat-expansion-panel>
+
+                    <!-- Agent Notes -->
+                    <mat-expansion-panel *ngIf="appointment.agentNotes">
+                        <mat-expansion-panel-header>
+                            <mat-panel-title>
+                                <mat-icon>work</mat-icon>
+                                Notas del Agente
+                            </mat-panel-title>
+                        </mat-expansion-panel-header>
+                        <div class="note-content agent-note">{{ appointment.agentNotes }}</div>
+                    </mat-expansion-panel>
+                </mat-accordion>
+            </mat-card-content>
+        </mat-card>
+
+        <!-- System Information Card -->
+        <mat-card class="system-info-card" appearance="outlined">
+            <mat-card-header>
+                <mat-card-title>
+                    <mat-icon>info</mat-icon>
+                    Información del Sistema
+                </mat-card-title>
+            </mat-card-header>
+
+            <mat-card-content>
+                <div class="system-info-grid">
+                    <div class="system-info-item">
+                        <mat-icon color="primary">schedule</mat-icon>
+                        <div class="system-info-content">
+                            <span class="system-info-label">Creada el</span>
+                            <span class="system-info-value">{{ appointment.createdAt | date:'medium':'es-ES' }}</span>
+                        </div>
+                    </div>
+
+                    <div class="system-info-item" *ngIf="appointment.updatedAt">
+                        <mat-icon color="primary">update</mat-icon>
+                        <div class="system-info-content">
+                            <span class="system-info-label">Última actualización</span>
+                            <span class="system-info-value">{{ appointment.updatedAt | date:'medium':'es-ES' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </mat-card-content>
+        </mat-card>
+    </div>
+
+    <!-- Action Loading Overlay -->
+    <div class="action-loading-overlay" *ngIf="actionLoading">
+        <mat-card class="loading-dialog" appearance="outlined">
+            <mat-card-content>
+                <div class="loading-dialog-content">
+                    <mat-spinner diameter="40"></mat-spinner>
+                    <h3>Procesando acción...</h3>
+                    <p>Por favor espera mientras procesamos tu solicitud.</p>
+                </div>
+            </mat-card-content>
+        </mat-card>
+    </div>
+</div>
