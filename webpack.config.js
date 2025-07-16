@@ -17,5 +17,5 @@ const moduleFederationConfig = withModuleFederationPlugin({
       }
     })
  
-moduleFederationConfig.output.publicPath = "http://localhost:5000/";
+moduleFederationConfig.output.publicPath = "https://inmo-house-citas.vercel.app/";
 module.exports = moduleFederationConfig;
